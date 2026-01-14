@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adian's Time Tracker</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Time Tracker">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>⏰ Adian's Time Tracker</h1>
+            <button id="installBtn" class="install-btn" style="display: none;">Install App</button>
+        </header>
+
+        <main class="app-main">
+            <div class="card">
+                <h2>Track Your Work Hours</h2>
+                <p>A Progressive Web App for tracking work time that installs on Android devices and works offline.</p>
+
+                <!-- Punch In/Out Buttons -->
+                <div class="punch-buttons">
+                    <button id="punchInBtn" class="btn btn-punch-in">
+                        🟢 Punch In
+                    </button>
+                    <button id="punchOutBtn" class="btn btn-punch-out">
+                        🔴 Punch Out
+                    </button>
+                </div>
+
+                <!-- Current Status -->
+                <div id="currentStatus" class="status-display">
+                    Ready to start tracking time
+                </div>
+
+                <!-- Feature Grid -->
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>📱 Mobile Ready</h3>
+                        <p>Install on Android home screen</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3>⚡ Fast & Offline</h3>
+                        <p>Works without internet connection</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3>💾 Local Storage</h3>
+                        <p>Your data stays on your device</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3>📊 Time Reports</h3>
+                        <p>View hours worked by date range</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="viewEntriesBtn" class="btn btn-primary">View Time Entries</button>
+                    <button id="calculateHoursBtn" class="btn btn-secondary">Calculate Hours</button>
+                </div>
+
+                <!-- Output Area -->
+                <div id="output" class="output-area">
+                    App initialized successfully!
+Ready to start tracking your work hours.
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p>&copy; 2026 Adian's Time Tracker - Built for Android</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
