@@ -1,0 +1,24 @@
+{
+  "name": "Adian's Time Tracker",
+  "short_name": "TimeTracker",
+  "description": "Progressive Web App for tracking work hours on Android",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2196F3",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "business"
+  ],
+  "lang": "en",
+  "dir": "ltr"
+}
