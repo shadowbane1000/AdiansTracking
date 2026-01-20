@@ -212,6 +212,23 @@ class TimeTracker {
         this.updateStatus();
     }
 
+    deleteEntry(index) {
+        if (confirm('Are you sure you want to delete this entry?')) {
+            this.entries.splice(index, 1);
+            this.saveEntries();
+            this.viewTimeEntries();
+            this.showOutput('✅ Entry deleted successfully', 'success');
+        }
+    }
+
+    updateEntry(index, field, value) {
+        if (value) {
+            this.entries[index][field] = new Date(value).toISOString();
+            this.saveEntries();
+            this.viewTimeEntries();
+        }
+    }
+
     viewTimeEntries() {
         this.lastAction = 'viewEntries';
         const filteredEntries = this.filterEntriesByDateRange(this.entries);
@@ -226,26 +243,45 @@ class TimeTracker {
         if (this.dateRange.start || this.dateRange.end) {
             output += '<p class="date-range-info">📅 ';
             if (this.dateRange.start && this.dateRange.end) {
-                output += `Showing entries from ${this.formatDate(this.dateRange.start)} to ${this.formatDate(this.dateRange.end)}`;
+                output += `Showing entries from ${this.formatDateOnly(this.dateRange.start)} to ${this.formatDateOnly(this.dateRange.end)}`;
             } else if (this.dateRange.start) {
-                output += `Showing entries from ${this.formatDate(this.dateRange.start)} onwards`;
+                output += `Showing entries from ${this.formatDateOnly(this.dateRange.start)} onwards`;
             } else {
-                output += `Showing entries up to ${this.formatDate(this.dateRange.end)}`;
+                output += `Showing entries up to ${this.formatDateOnly(this.dateRange.end)}`;
             }
             output += '</p>';
         }
 
         output += '<div class="entries-list">';
 
-        filteredEntries.forEach((entry, index) => {
+        filteredEntries.forEach((entry) => {
+            const originalIndex = this.entries.indexOf(entry);
+            const punchInDatetime = this.toDatetimeLocalString(entry.punchIn);
+            const punchOutDatetime = this.toDatetimeLocalString(entry.punchOut);
+
             output += `
                 <div class="entry-item">
-                    <div class="entry-header">Entry #${this.entries.indexOf(entry) + 1}</div>
+                    <div class="entry-header">
+                        Entry #${originalIndex + 1}
+                        <button class="btn-delete" onclick="app.deleteEntry(${originalIndex})">🗑️ Delete</button>
+                    </div>
                     <div class="entry-details">
-                        <div>📅 ${this.formatDate(entry.punchIn)}</div>
-                        <div>🟢 In: ${this.formatTime(entry.punchIn)}</div>
-                        <div>🔴 Out: ${this.formatTime(entry.punchOut)}</div>
-                        <div>⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}</div>
+                        <div class="entry-date">📅 ${this.formatDateOnly(entry.punchIn)}</div>
+                        <div class="entry-edit-row">
+                            <label>🟢 Punch In:</label>
+                            <input type="datetime-local" 
+                                   value="${punchInDatetime}" 
+                                   onchange="app.updateEntry(${originalIndex}, 'punchIn', this.value)"
+                                   class="datetime-edit">
+                        </div>
+                        <div class="entry-edit-row">
+                            <label>🔴 Punch Out:</label>
+                            <input type="datetime-local" 
+                                   value="${punchOutDatetime}" 
+                                   onchange="app.updateEntry(${originalIndex}, 'punchOut', this.value)"
+                                   class="datetime-edit">
+                        </div>
+                        <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}</div>
                     </div>
                 </div>
             `;
@@ -286,11 +322,11 @@ class TimeTracker {
         if (this.dateRange.start || this.dateRange.end) {
             output += '<p class="date-range-info">📅 ';
             if (this.dateRange.start && this.dateRange.end) {
-                output += `Period: ${this.formatDate(this.dateRange.start)} to ${this.formatDate(this.dateRange.end)}`;
+                output += `Period: ${this.formatDateOnly(this.dateRange.start)} to ${this.formatDateOnly(this.dateRange.end)}`;
             } else if (this.dateRange.start) {
-                output += `Period: ${this.formatDate(this.dateRange.start)} onwards`;
+                output += `Period: ${this.formatDateOnly(this.dateRange.start)} onwards`;
             } else {
-                output += `Period: up to ${this.formatDate(this.dateRange.end)}`;
+                output += `Period: up to ${this.formatDateOnly(this.dateRange.end)}`;
             }
             output += '</p>';
         }
@@ -344,13 +380,33 @@ class TimeTracker {
         });
     }
 
-    formatDate(dateString) {
-        const date = new Date(dateString + 'T00:00:00');
+    formatDateOnly(dateInput) {
+        // Handle both ISO strings and date strings (YYYY-MM-DD)
+        let date;
+        if (dateInput.includes('T')) {
+            date = new Date(dateInput);
+        } else {
+            // For date-only strings, create date at noon UTC to avoid timezone issues
+            date = new Date(dateInput + 'T12:00:00Z');
+        }
+
         return date.toLocaleDateString('en-US', { 
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            timeZone: 'UTC'
         });
+    }
+
+    toDatetimeLocalString(isoString) {
+        // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
+        const date = new Date(isoString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     calculateDuration(start, end) {
@@ -376,9 +432,12 @@ class TimeTracker {
     }
 }
 
+// Global app instance
+let app;
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new TimeTracker();
+    app = new TimeTracker();
 
     // Update status every minute if clocked in
     setInterval(() => {
