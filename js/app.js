@@ -1,8 +1,12 @@
-// Time Tracker App functionality
-class TimeTrackerApp {
+// Time Tracker App
+class TimeTracker {
     constructor() {
         this.currentEntry = null;
-        this.timeEntries = this.loadTimeEntries();
+        this.entries = this.loadEntries();
+        this.dateRange = {
+            start: null,
+            end: null
+        };
         this.init();
     }
 
@@ -10,6 +14,7 @@ class TimeTrackerApp {
         this.setupEventListeners();
         this.setupPWAInstall();
         this.updateStatus();
+        this.initializeDateInputs();
     }
 
     setupEventListeners() {
@@ -29,6 +34,123 @@ class TimeTrackerApp {
 
         document.getElementById('calculateHoursBtn').addEventListener('click', () => {
             this.calculateHours();
+        });
+
+        // Date range inputs
+        document.getElementById('startDate').addEventListener('change', (e) => {
+            this.dateRange.start = e.target.value;
+            this.updateDateRangeDisplay();
+        });
+
+        document.getElementById('endDate').addEventListener('change', (e) => {
+            this.dateRange.end = e.target.value;
+            this.updateDateRangeDisplay();
+        });
+
+        // Quick filter buttons
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            this.setDateRangeToday();
+        });
+
+        document.getElementById('thisWeekBtn').addEventListener('click', () => {
+            this.setDateRangeThisWeek();
+        });
+
+        document.getElementById('thisMonthBtn').addEventListener('click', () => {
+            this.setDateRangeThisMonth();
+        });
+
+        document.getElementById('allTimeBtn').addEventListener('click', () => {
+            this.setDateRangeAllTime();
+        });
+    }
+
+    initializeDateInputs() {
+        // Set default to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').value = today;
+        document.getElementById('endDate').value = today;
+        this.dateRange.start = today;
+        this.dateRange.end = today;
+    }
+
+    setDateRangeToday() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').value = today;
+        document.getElementById('endDate').value = today;
+        this.dateRange.start = today;
+        this.dateRange.end = today;
+        this.updateDateRangeDisplay();
+    }
+
+    setDateRangeThisWeek() {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - dayOfWeek);
+
+        const start = startOfWeek.toISOString().split('T')[0];
+        const end = today.toISOString().split('T')[0];
+
+        document.getElementById('startDate').value = start;
+        document.getElementById('endDate').value = end;
+        this.dateRange.start = start;
+        this.dateRange.end = end;
+        this.updateDateRangeDisplay();
+    }
+
+    setDateRangeThisMonth() {
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+        const start = startOfMonth.toISOString().split('T')[0];
+        const end = today.toISOString().split('T')[0];
+
+        document.getElementById('startDate').value = start;
+        document.getElementById('endDate').value = end;
+        this.dateRange.start = start;
+        this.dateRange.end = end;
+        this.updateDateRangeDisplay();
+    }
+
+    setDateRangeAllTime() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        this.dateRange.start = null;
+        this.dateRange.end = null;
+        this.updateDateRangeDisplay();
+    }
+
+    updateDateRangeDisplay() {
+        // This will trigger recalculation when viewing entries or calculating hours
+        if (document.getElementById('outputDisplay').innerHTML) {
+            // If there's already output displayed, refresh it
+            const lastAction = this.lastAction;
+            if (lastAction === 'viewEntries') {
+                this.viewTimeEntries();
+            } else if (lastAction === 'calculateHours') {
+                this.calculateHours();
+            }
+        }
+    }
+
+    filterEntriesByDateRange(entries) {
+        if (!this.dateRange.start && !this.dateRange.end) {
+            return entries; // No filter, return all
+        }
+
+        return entries.filter(entry => {
+            const entryDate = new Date(entry.punchIn).toISOString().split('T')[0];
+
+            if (this.dateRange.start && this.dateRange.end) {
+                return entryDate >= this.dateRange.start && entryDate <= this.dateRange.end;
+            } else if (this.dateRange.start) {
+                return entryDate >= this.dateRange.start;
+            } else if (this.dateRange.end) {
+                return entryDate <= this.dateRange.end;
+            }
+
+            return true;
         });
     }
 
@@ -60,137 +182,215 @@ class TimeTrackerApp {
 
     punchIn() {
         if (this.currentEntry) {
-            this.showOutput('Already punched in! Punch out first.');
+            this.showOutput('Already punched in! Punch out first.', 'warning');
             return;
         }
 
-        const now = new Date();
         this.currentEntry = {
-            id: Date.now(),
-            punchIn: now,
-            date: now.toDateString()
+            punchIn: new Date().toISOString(),
+            punchOut: null
         };
 
         this.updateStatus();
-        this.showOutput(`Punched in at ${now.toLocaleTimeString()}`);
+        this.showOutput('✅ Punched in at ' + this.formatTime(this.currentEntry.punchIn), 'success');
     }
 
     punchOut() {
         if (!this.currentEntry) {
-            this.showOutput('Not punched in! Punch in first.');
+            this.showOutput('Not punched in! Punch in first.', 'warning');
             return;
         }
 
-        const now = new Date();
-        this.currentEntry.punchOut = now;
+        this.currentEntry.punchOut = new Date().toISOString();
+        this.entries.push(this.currentEntry);
+        this.saveEntries();
 
-        // Calculate hours worked
-        const hoursWorked = (now - this.currentEntry.punchIn) / (1000 * 60 * 60);
-        this.currentEntry.hoursWorked = hoursWorked;
-
-        // Save the entry
-        this.timeEntries.push(this.currentEntry);
-        this.saveTimeEntries();
-
-        this.showOutput(`Punched out at ${now.toLocaleTimeString()}\nHours worked: ${hoursWorked.toFixed(2)}`);
+        const duration = this.calculateDuration(this.currentEntry.punchIn, this.currentEntry.punchOut);
+        this.showOutput(`✅ Punched out at ${this.formatTime(this.currentEntry.punchOut)}\nDuration: ${duration}`, 'success');
 
         this.currentEntry = null;
         this.updateStatus();
     }
 
-    updateStatus() {
-        const statusEl = document.getElementById('currentStatus');
-
-        if (this.currentEntry) {
-            const punchInTime = this.currentEntry.punchIn.toLocaleTimeString();
-            statusEl.textContent = `⏰ Punched in at ${punchInTime}`;
-            statusEl.style.background = '#e8f5e8';
-            statusEl.style.borderColor = '#4CAF50';
-            statusEl.style.color = '#2e7d32';
-        } else {
-            statusEl.textContent = 'Ready to start tracking time';
-            statusEl.style.background = '#e3f2fd';
-            statusEl.style.borderColor = '#2196F3';
-            statusEl.style.color = '#1976D2';
-        }
-    }
-
     viewTimeEntries() {
-        if (this.timeEntries.length === 0) {
-            this.showOutput('No time entries found.');
+        this.lastAction = 'viewEntries';
+        const filteredEntries = this.filterEntriesByDateRange(this.entries);
+
+        if (filteredEntries.length === 0) {
+            this.showOutput('No time entries found for the selected date range.', 'info');
             return;
         }
 
-        let output = 'Time Entries:\n\n';
-        this.timeEntries.forEach((entry, index) => {
-            const punchIn = new Date(entry.punchIn).toLocaleString();
-            const punchOut = entry.punchOut ? new Date(entry.punchOut).toLocaleString() : 'Still working';
-            const hours = entry.hoursWorked ? entry.hoursWorked.toFixed(2) : 'In progress';
+        let output = '<h3>Time Entries</h3>';
 
-            output += `${index + 1}. ${entry.date}\n`;
-            output += `   In: ${punchIn}\n`;
-            output += `   Out: ${punchOut}\n`;
-            output += `   Hours: ${hours}\n\n`;
+        if (this.dateRange.start || this.dateRange.end) {
+            output += '<p class="date-range-info">📅 ';
+            if (this.dateRange.start && this.dateRange.end) {
+                output += `Showing entries from ${this.formatDate(this.dateRange.start)} to ${this.formatDate(this.dateRange.end)}`;
+            } else if (this.dateRange.start) {
+                output += `Showing entries from ${this.formatDate(this.dateRange.start)} onwards`;
+            } else {
+                output += `Showing entries up to ${this.formatDate(this.dateRange.end)}`;
+            }
+            output += '</p>';
+        }
+
+        output += '<div class="entries-list">';
+
+        filteredEntries.forEach((entry, index) => {
+            output += `
+                <div class="entry-item">
+                    <div class="entry-header">Entry #${this.entries.indexOf(entry) + 1}</div>
+                    <div class="entry-details">
+                        <div>📅 ${this.formatDate(entry.punchIn)}</div>
+                        <div>🟢 In: ${this.formatTime(entry.punchIn)}</div>
+                        <div>🔴 Out: ${this.formatTime(entry.punchOut)}</div>
+                        <div>⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}</div>
+                    </div>
+                </div>
+            `;
         });
 
-        this.showOutput(output);
+        output += '</div>';
+        this.showOutput(output, 'info');
     }
 
     calculateHours() {
-        if (this.timeEntries.length === 0) {
-            this.showOutput('No time entries to calculate.');
+        this.lastAction = 'calculateHours';
+        const filteredEntries = this.filterEntriesByDateRange(this.entries);
+
+        if (filteredEntries.length === 0) {
+            this.showOutput('No time entries found for the selected date range.', 'info');
             return;
         }
 
-        const totalHours = this.timeEntries.reduce((total, entry) => {
-            return total + (entry.hoursWorked || 0);
-        }, 0);
+        let totalMinutes = 0;
+        let todayMinutes = 0;
+        const today = new Date().toISOString().split('T')[0];
 
-        const today = new Date().toDateString();
-        const todayEntries = this.timeEntries.filter(entry => entry.date === today);
-        const todayHours = todayEntries.reduce((total, entry) => {
-            return total + (entry.hoursWorked || 0);
-        }, 0);
+        filteredEntries.forEach(entry => {
+            const minutes = this.getMinutesDuration(entry.punchIn, entry.punchOut);
+            totalMinutes += minutes;
 
-        this.showOutput(`Hours Summary:\n\nToday: ${todayHours.toFixed(2)} hours\nTotal: ${totalHours.toFixed(2)} hours\nEntries: ${this.timeEntries.length}`);
+            const entryDate = new Date(entry.punchIn).toISOString().split('T')[0];
+            if (entryDate === today) {
+                todayMinutes += minutes;
+            }
+        });
+
+        const totalHours = (totalMinutes / 60).toFixed(2);
+        const todayHours = (todayMinutes / 60).toFixed(2);
+
+        let output = '<h3>Hours Summary</h3>';
+
+        if (this.dateRange.start || this.dateRange.end) {
+            output += '<p class="date-range-info">📅 ';
+            if (this.dateRange.start && this.dateRange.end) {
+                output += `Period: ${this.formatDate(this.dateRange.start)} to ${this.formatDate(this.dateRange.end)}`;
+            } else if (this.dateRange.start) {
+                output += `Period: ${this.formatDate(this.dateRange.start)} onwards`;
+            } else {
+                output += `Period: up to ${this.formatDate(this.dateRange.end)}`;
+            }
+            output += '</p>';
+        }
+
+        output += `
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Today:</div>
+                    <div class="stat-value">${todayHours} hours</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total:</div>
+                    <div class="stat-value">${totalHours} hours</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Entries:</div>
+                    <div class="stat-value">${filteredEntries.length}</div>
+                </div>
+            </div>
+        `;
+
+        this.showOutput(output, 'info');
     }
 
-    showOutput(message) {
-        const output = document.getElementById('output');
-        output.textContent = message;
-    }
+    updateStatus() {
+        const statusDiv = document.getElementById('currentStatus');
 
-    loadTimeEntries() {
-        try {
-            const saved = localStorage.getItem('timeEntries');
-            return saved ? JSON.parse(saved) : [];
-        } catch (error) {
-            console.error('Error loading time entries:', error);
-            return [];
+        if (this.currentEntry) {
+            const duration = this.calculateDuration(this.currentEntry.punchIn, new Date().toISOString());
+            statusDiv.innerHTML = `🟢 Currently clocked in<br>Started: ${this.formatTime(this.currentEntry.punchIn)}<br>Duration: ${duration}`;
+            statusDiv.className = 'status-display status-active';
+        } else {
+            statusDiv.innerHTML = 'Ready to start tracking time';
+            statusDiv.className = 'status-display';
         }
     }
 
-    saveTimeEntries() {
-        try {
-            localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
-        } catch (error) {
-            console.error('Error saving time entries:', error);
-        }
+    showOutput(message, type = 'info') {
+        const outputDiv = document.getElementById('outputDisplay');
+        outputDiv.innerHTML = message;
+        outputDiv.className = `output-display output-${type}`;
+        outputDiv.style.display = 'block';
+    }
+
+    formatTime(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    calculateDuration(start, end) {
+        const minutes = this.getMinutesDuration(start, end);
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours}h ${mins}m`;
+    }
+
+    getMinutesDuration(start, end) {
+        const startTime = new Date(start);
+        const endTime = new Date(end);
+        return Math.floor((endTime - startTime) / 1000 / 60);
+    }
+
+    loadEntries() {
+        const stored = localStorage.getItem('timeEntries');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    saveEntries() {
+        localStorage.setItem('timeEntries', JSON.stringify(this.entries));
     }
 }
 
-// Initialize the app
+// Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.timeTrackerApp = new TimeTrackerApp();
+    const app = new TimeTracker();
+
+    // Update status every minute if clocked in
+    setInterval(() => {
+        if (app.currentEntry) {
+            app.updateStatus();
+        }
+    }, 60000);
 });
 
-// Handle online/offline status
-window.addEventListener('online', () => {
-    document.body.classList.remove('offline');
-    console.log('App is online');
-});
-
-window.addEventListener('offline', () => {
-    document.body.classList.add('offline');
-    console.log('App is offline');
-});
+// Register service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed'));
+}
