@@ -70,36 +70,44 @@
                     </div>
                 </div>
 
+                <!-- Date Range Filter -->
+                <div class="date-range-filter">
+                    <h3>📅 Filter by Date Range</h3>
+                    <div class="date-inputs">
+                        <div class="date-input-group">
+                            <label for="startDate">Start Date:</label>
+                            <input type="date" id="startDate" class="date-input">
+                        </div>
+                        <div class="date-input-group">
+                            <label for="endDate">End Date:</label>
+                            <input type="date" id="endDate" class="date-input">
+                        </div>
+                    </div>
+                    <div class="date-quick-filters">
+                        <button id="todayBtn" class="btn btn-quick-filter">Today</button>
+                        <button id="thisWeekBtn" class="btn btn-quick-filter">This Week</button>
+                        <button id="thisMonthBtn" class="btn btn-quick-filter">This Month</button>
+                        <button id="allTimeBtn" class="btn btn-quick-filter">All Time</button>
+                    </div>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <button id="viewEntriesBtn" class="btn btn-primary">View Time Entries</button>
-                    <button id="calculateHoursBtn" class="btn btn-secondary">Calculate Hours</button>
+                    <button id="viewEntriesBtn" class="btn btn-primary">
+                        View Time Entries
+                    </button>
+                    <button id="calculateHoursBtn" class="btn btn-secondary">
+                        Calculate Hours
+                    </button>
                 </div>
 
-                <!-- Output Area -->
-                <div id="output" class="output-area">
-                    App initialized successfully!
-Ready to start tracking your work hours.
-                </div>
+                <!-- Output Display -->
+                <div id="outputDisplay" class="output-display"></div>
             </div>
         </main>
-
-        <footer class="app-footer">
-            <p>&copy; 2026 Adian's Time Tracker - Built for Android</p>
-        </footer>
     </div>
 
     <!-- Scripts -->
     <script src="js/app.js"></script>
-    <script>
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(error => console.log('SW registration failed'));
-            });
-        }
-    </script>
 </body>
 </html>
