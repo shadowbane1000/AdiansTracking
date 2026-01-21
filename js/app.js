@@ -190,7 +190,16 @@ class TimeTracker {
 
     updateStatus() {
         const s = document.getElementById('currentStatus');
-        s.textContent = this.currentEntry ? 'Clocked In' : 'Ready';
+        if (this.currentEntry) {
+            const time = new Date(this.currentEntry.punchIn).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            s.textContent = `Clocked In at ${time}`;
+        } else {
+            s.textContent = 'Ready';
+        }
     }
 
     loadEntries() {
