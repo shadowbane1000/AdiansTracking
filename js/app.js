@@ -426,6 +426,16 @@ class TimeTracker {
         return Math.floor((endTime - startTime) / 1000 / 60);
     }
 
+
+    calculateEarnings(minutes) {
+        if (!this.payRate || minutes <= 0) return 0;
+        return (minutes / 60) * this.payRate;
+    }
+
+    formatMoney(value) {
+        return `$${value.toFixed(2)}`;
+    }
+
     loadEntries() {
         const stored = localStorage.getItem('timeEntries');
         return stored ? JSON.parse(stored) : [];
