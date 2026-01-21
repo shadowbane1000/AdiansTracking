@@ -541,3 +541,43 @@ body {
   padding: 0.5rem;
   font-size: 1rem;
 }
+
+
+/* Summary Card */
+#outputDisplay h3 {
+  margin-bottom: 0.5rem;
+}
+
+.summary-card {
+  background: #f7f9fc;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.summary-card .money {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+/* Entry delete button */
+.entry-item {
+  position: relative;
+}
+
+.entry-item button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #c62828;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.entry-item button:hover {
+  color: #b71c1c;
+  text-decoration: underline;
+}
