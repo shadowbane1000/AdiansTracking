@@ -120,6 +120,7 @@ class TimeTracker {
             const minutes = this.getMinutes(e);
             html += `
                 <div class="entry-item">
+                    <button onclick="window.app.deleteEntry(${idx})">Delete</button>
                     <strong>${e.punchIn.split('T')[0]}</strong><br>
                     ⏱️ ${this.formatDuration(minutes)} |
                     💰 ${this.formatMoney(this.calculateEarnings(minutes))}
@@ -128,7 +129,6 @@ class TimeTracker {
                         onchange="window.app.updateEntry(${idx}, 'punchIn', this.value)">
                     <input type="datetime-local" value="${this.toLocal(e.punchOut)}"
                         onchange="window.app.updateEntry(${idx}, 'punchOut', this.value)">
-                    <button onclick="window.app.deleteEntry(${idx})">Delete</button>
                 </div>`;
         });
         html += '</div>';
