@@ -279,7 +279,12 @@ class TimeTracker {
                                    onchange="window.app.updateEntry(${originalIndex}, 'punchOut', this.value)"
                                    class="datetime-edit">
                         </div>
-                        <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)} | 💰 ${this.formatMoney(this.calculateEarnings(this.getMinutesDuration(entry.punchIn, entry.punchOut)))}</div>
+                        <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}
+     | 💰 ${this.formatMoney(
+        this.calculateEarnings(
+          this.getMinutesDuration(entry.punchIn, entry.punchOut)
+        )
+     )}</div>
                     </div>
                 </div>
             `;
@@ -299,9 +304,9 @@ class TimeTracker {
         }
 
         let totalMinutes = 0;
-        let todayMinutes = 0;
         let totalPay = 0;
         let todayPay = 0;
+        let todayMinutes = 0;
         const today = new Date().toISOString().split('T')[0];
 
         filteredEntries.forEach(entry => {
