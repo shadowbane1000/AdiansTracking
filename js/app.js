@@ -167,7 +167,13 @@ class TimeTracker {
     }
 
     updateEntry(i, k, v) {
-        this.entries[i][k] = new Date(v).toISOString();
+        // Preserve local time when converting to ISO
+        // v is like "2026-01-21T05:00" (datetime-local, no timezone)
+        const localDate = new Date(v);
+        const offset = localDate.getTimezoneOffset() * 60000;
+        const localISO = new Date(localDate.getTime() - offset).toISOString();
+
+        this.entries[i][k] = localISO;
         this.saveEntries();
         this.refreshView();
     }
