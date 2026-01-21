@@ -143,8 +143,9 @@ class TimeTracker {
 
         this.show(`
             <h3>Summary</h3>
-            ${ (totalMinutes/60).toFixed(2) } hours<br>
-            💰 ${this.formatMoney(this.calculateEarnings(totalMinutes))}
+            <div class="summary-card">
+            <div class="summary-hours">⏱️ ${(totalMinutes / 60).toFixed(2)} hrs</div></div><br>
+            <div class="summary-amount">💰 ${this.formatMoney(this.calculateEarnings(totalMinutes))}</div>
         `);
     }
 
