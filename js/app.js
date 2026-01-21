@@ -163,17 +163,15 @@ class TimeTracker {
     }
 
     toLocal(iso) {
-        return iso ? iso.slice(0,16) : '';
+        if (!iso) return '';
+        const date = new Date(iso);
+        const offset = date.getTimezoneOffset() * 60000;
+        const localDate = new Date(date.getTime() - offset);
+        return localDate.toISOString().slice(0, 16);
     }
 
     updateEntry(i, k, v) {
-        // Preserve local time when converting to ISO
-        // v is like "2026-01-21T05:00" (datetime-local, no timezone)
-        const localDate = new Date(v);
-        const offset = localDate.getTimezoneOffset() * 60000;
-        const localISO = new Date(localDate.getTime() - offset).toISOString();
-
-        this.entries[i][k] = localISO;
+        this.entries[i][k] = new Date(v).toISOString();
         this.saveEntries();
         this.refreshView();
     }
