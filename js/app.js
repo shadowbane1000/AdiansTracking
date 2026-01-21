@@ -122,9 +122,7 @@ class TimeTracker {
     }
 
     updateDateRangeDisplay() {
-        // This will trigger recalculation when viewing entries or calculating hours
         if (document.getElementById('outputDisplay').innerHTML) {
-            // If there's already output displayed, refresh it
             const lastAction = this.lastAction;
             if (lastAction === 'viewEntries') {
                 this.viewTimeEntries();
@@ -136,7 +134,7 @@ class TimeTracker {
 
     filterEntriesByDateRange(entries) {
         if (!this.dateRange.start && !this.dateRange.end) {
-            return entries; // No filter, return all
+            return entries;
         }
 
         return entries.filter(entry => {
@@ -217,7 +215,6 @@ class TimeTracker {
             this.entries.splice(index, 1);
             this.saveEntries();
             this.viewTimeEntries();
-            this.showOutput('✅ Entry deleted successfully', 'success');
         }
     }
 
@@ -258,27 +255,28 @@ class TimeTracker {
             const originalIndex = this.entries.indexOf(entry);
             const punchInDatetime = this.toDatetimeLocalString(entry.punchIn);
             const punchOutDatetime = this.toDatetimeLocalString(entry.punchOut);
+            const entryDate = this.formatDateOnly(entry.punchIn);
 
             output += `
                 <div class="entry-item">
                     <div class="entry-header">
                         Entry #${originalIndex + 1}
-                        <button class="btn-delete" onclick="app.deleteEntry(${originalIndex})">🗑️ Delete</button>
+                        <button class="btn-delete" onclick="window.app.deleteEntry(${originalIndex})">🗑️ Delete</button>
                     </div>
                     <div class="entry-details">
-                        <div class="entry-date">📅 ${this.formatDateOnly(entry.punchIn)}</div>
+                        <div class="entry-date">📅 ${entryDate}</div>
                         <div class="entry-edit-row">
                             <label>🟢 Punch In:</label>
                             <input type="datetime-local" 
                                    value="${punchInDatetime}" 
-                                   onchange="app.updateEntry(${originalIndex}, 'punchIn', this.value)"
+                                   onchange="window.app.updateEntry(${originalIndex}, 'punchIn', this.value)"
                                    class="datetime-edit">
                         </div>
                         <div class="entry-edit-row">
                             <label>🔴 Punch Out:</label>
                             <input type="datetime-local" 
                                    value="${punchOutDatetime}" 
-                                   onchange="app.updateEntry(${originalIndex}, 'punchOut', this.value)"
+                                   onchange="window.app.updateEntry(${originalIndex}, 'punchOut', this.value)"
                                    class="datetime-edit">
                         </div>
                         <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}</div>
@@ -380,26 +378,23 @@ class TimeTracker {
         });
     }
 
-    formatDateOnly(dateInput) {
-        // Handle both ISO strings and date strings (YYYY-MM-DD)
-        let date;
-        if (dateInput.includes('T')) {
-            date = new Date(dateInput);
-        } else {
-            // For date-only strings, create date at noon UTC to avoid timezone issues
-            date = new Date(dateInput + 'T12:00:00Z');
+    formatDateOnly(isoStringOrDate) {
+        // Handle ISO strings with time component
+        const date = new Date(isoStringOrDate);
+
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return 'Invalid Date';
         }
 
         return date.toLocaleDateString('en-US', { 
             year: 'numeric',
             month: 'short',
-            day: 'numeric',
-            timeZone: 'UTC'
+            day: 'numeric'
         });
     }
 
     toDatetimeLocalString(isoString) {
-        // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
         const date = new Date(isoString);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -432,17 +427,14 @@ class TimeTracker {
     }
 }
 
-// Global app instance
-let app;
-
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    app = new TimeTracker();
+    window.app = new TimeTracker();
 
     // Update status every minute if clocked in
     setInterval(() => {
-        if (app.currentEntry) {
-            app.updateStatus();
+        if (window.app.currentEntry) {
+            window.app.updateStatus();
         }
     }, 60000);
 });
