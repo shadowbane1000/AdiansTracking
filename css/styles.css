@@ -543,36 +543,27 @@ body {
 }
 
 
-/* Compact Calculate Hours Summary */
-.summary-card {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
-  margin-top: 1rem;
-  text-align: center;
+/* Delete button - right aligned and red */
+.entry-item {
+  position: relative;
+  padding-top: 2.5rem;
 }
 
-.summary-card .summary-amount {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #2e7d32;
-  line-height: 1.2;
+.entry-item button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: 1px solid #c62828;
+  color: #c62828;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.summary-card .summary-hours {
-  margin-top: 0.25rem;
-  font-size: 0.9rem;
-  color: #555;
-}
-
-@media (min-width: 768px) {
-  .summary-card {
-    padding: 1.2rem 1.5rem;
-  }
-  .summary-card .summary-amount {
-    font-size: 1.8rem;
-  }
-  .summary-card .summary-hours {
-    font-size: 1rem;
-  }
+.entry-item button:hover {
+  background: #c62828;
+  color: white;
 }
