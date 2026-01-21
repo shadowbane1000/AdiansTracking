@@ -3,6 +3,8 @@ class TimeTracker {
     constructor() {
         this.currentEntry = null;
         this.entries = this.loadEntries();
+        this.payRate = parseFloat(localStorage.getItem('payRate')) || 0;
+
         this.dateRange = {
             start: null,
             end: null
@@ -14,7 +16,7 @@ class TimeTracker {
         this.setupEventListeners();
         this.setupPWAInstall();
         this.updateStatus();
-        this.initializeDateInputs();
+        this.initializeDateInputs(); this.initializePayRate();
     }
 
     setupEventListeners() {
@@ -65,7 +67,19 @@ class TimeTracker {
         });
     }
 
+    
+    initializePayRate() {
+        const input = document.getElementById('payRate');
+        input.value = this.payRate || '';
+        input.addEventListener('change', e => {
+            this.payRate = parseFloat(e.target.value) || 0;
+            localStorage.setItem('payRate', this.payRate);
+            this.updateDateRangeDisplay();
+        });
+    }
+
     initializeDateInputs() {
+
         // Set default to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').value = today;
@@ -404,11 +418,22 @@ class TimeTracker {
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
+    
+    calculateEarnings(minutes) {
+        if (!this.payRate) return 0;
+        return (minutes / 60) * this.payRate;
+    }
+
+    formatMoney(value) {
+        return `$${value.toFixed(2)}`;
+    }
+
     calculateDuration(start, end) {
+
         const minutes = this.getMinutesDuration(start, end);
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        return `${hours}h ${mins}m`;
+        return `${hours}h ${mins}m`; 
     }
 
     getMinutesDuration(start, end) {
