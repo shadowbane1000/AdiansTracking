@@ -543,27 +543,43 @@ body {
 }
 
 
-/* Delete button - right aligned and red */
+/* Entry delete button – right aligned, red */
 .entry-item {
   position: relative;
-  padding-top: 2.5rem;
 }
 
-.entry-item button {
+.entry-item .delete-btn {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 10px;
+  right: 10px;
   background: transparent;
-  border: 1px solid #c62828;
+  border: none;
   color: #c62828;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  padding: 0;
 }
 
-.entry-item button:hover {
-  background: #c62828;
-  color: white;
+.entry-item .delete-btn:hover {
+  color: #b71c1c;
+  text-decoration: underline;
+}
+
+/* Compact summary single-line layout */
+.summary-line {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.summary-line .amount {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #2e7d32;
+}
+
+.summary-line .hours {
+  font-size: 0.9rem;
+  color: #555;
 }
