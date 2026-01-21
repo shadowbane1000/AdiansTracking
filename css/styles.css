@@ -583,3 +583,43 @@ body {
   font-size: 0.9rem;
   color: #555;
 }
+
+
+/* Delete button - right aligned, red */
+.entry-item button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: 1px solid #c62828;
+  color: #c62828;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.entry-item button:hover {
+  background: #c62828;
+  color: white;
+}
+
+/* Summary single-line layout */
+.summary-line {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summary-line .amount {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #2e7d32;
+}
+
+.summary-line .hours {
+  font-size: 0.9rem;
+  color: #555;
+}
