@@ -432,3 +432,101 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Delete Button Styling */
+.btn-delete {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    float: right;
+}
+
+.btn-delete:hover {
+    background: #cc0000;
+    transform: scale(1.05);
+}
+
+.btn-delete:active {
+    transform: scale(0.95);
+}
+
+/* Entry Date Display */
+.entry-date {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Entry Edit Row */
+.entry-edit-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0.5rem 0;
+}
+
+.entry-edit-row label {
+    font-weight: 500;
+    color: #555;
+}
+
+/* Datetime Edit Input */
+.datetime-edit {
+    padding: 0.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: white;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.datetime-edit:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.datetime-edit:hover {
+    border-color: #667eea;
+}
+
+/* Entry Duration */
+.entry-duration {
+    font-weight: bold;
+    color: #764ba2;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Mobile Responsive for Edit Controls */
+@media (max-width: 768px) {
+    .entry-edit-row {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+
+    .entry-edit-row label {
+        font-size: 0.9rem;
+    }
+
+    .datetime-edit {
+        width: 100%;
+    }
+
+    .btn-delete {
+        float: none;
+        display: block;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
