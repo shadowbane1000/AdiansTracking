@@ -11,6 +11,7 @@ class TimeTracker {
     }
 
     init() {
+        this.initializePayRate();
         this.setupEventListeners();
         this.setupPWAInstall();
         this.updateStatus();
@@ -64,6 +65,22 @@ class TimeTracker {
             this.setDateRangeAllTime();
         });
     }
+
+    
+    initializePayRate() {
+        const input = document.getElementById('payRate');
+        this.payRate = parseFloat(localStorage.getItem('payRate')) || 0;
+
+        if (input) {
+            input.value = this.payRate || '';
+            input.addEventListener('input', e => {
+                this.payRate = parseFloat(e.target.value) || 0;
+                localStorage.setItem('payRate', this.payRate);
+                this.updateDateRangeDisplay();
+            });
+        }
+    }
+
 
     initializeDateInputs() {
         // Set default to today
@@ -424,16 +441,6 @@ class TimeTracker {
         const startTime = new Date(start);
         const endTime = new Date(end);
         return Math.floor((endTime - startTime) / 1000 / 60);
-    }
-
-
-    calculateEarnings(minutes) {
-        if (!this.payRate || minutes <= 0) return 0;
-        return (minutes / 60) * this.payRate;
-    }
-
-    formatMoney(value) {
-        return `$${value.toFixed(2)}`;
     }
 
     loadEntries() {
