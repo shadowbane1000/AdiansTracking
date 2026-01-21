@@ -3,8 +3,6 @@ class TimeTracker {
     constructor() {
         this.currentEntry = null;
         this.entries = this.loadEntries();
-        this.payRate = parseFloat(localStorage.getItem('payRate')) || 0;
-
         this.dateRange = {
             start: null,
             end: null
@@ -16,7 +14,7 @@ class TimeTracker {
         this.setupEventListeners();
         this.setupPWAInstall();
         this.updateStatus();
-        this.initializeDateInputs(); this.initializePayRate();
+        this.initializeDateInputs();
     }
 
     setupEventListeners() {
@@ -67,19 +65,7 @@ class TimeTracker {
         });
     }
 
-    
-    initializePayRate() {
-        const input = document.getElementById('payRate');
-        input.value = this.payRate || '';
-        input.addEventListener('change', e => {
-            this.payRate = parseFloat(e.target.value) || 0;
-            localStorage.setItem('payRate', this.payRate);
-            this.updateDateRangeDisplay();
-        });
-    }
-
     initializeDateInputs() {
-
         // Set default to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').value = today;
@@ -293,7 +279,7 @@ class TimeTracker {
                                    onchange="window.app.updateEntry(${originalIndex}, 'punchOut', this.value)"
                                    class="datetime-edit">
                         </div>
-                        <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}</div>
+                        <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)} | 💰 ${this.formatMoney(this.calculateEarnings(this.getMinutesDuration(entry.punchIn, entry.punchOut)))}</div>
                     </div>
                 </div>
             `;
@@ -314,15 +300,19 @@ class TimeTracker {
 
         let totalMinutes = 0;
         let todayMinutes = 0;
+        let totalPay = 0;
+        let todayPay = 0;
         const today = new Date().toISOString().split('T')[0];
 
         filteredEntries.forEach(entry => {
             const minutes = this.getMinutesDuration(entry.punchIn, entry.punchOut);
             totalMinutes += minutes;
+            totalPay += this.calculateEarnings(minutes);
 
             const entryDate = new Date(entry.punchIn).toISOString().split('T')[0];
             if (entryDate === today) {
                 todayMinutes += minutes;
+                todayPay += this.calculateEarnings(minutes);
             }
         });
 
@@ -347,11 +337,11 @@ class TimeTracker {
             <div class="summary-stats">
                 <div class="stat-item">
                     <div class="stat-label">Today:</div>
-                    <div class="stat-value">${todayHours} hours</div>
+                    <div class="stat-value">${todayHours} hours<br>💰 ${this.formatMoney(todayPay)}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Total:</div>
-                    <div class="stat-value">${totalHours} hours</div>
+                    <div class="stat-value">${totalHours} hours<br>💰 ${this.formatMoney(totalPay)}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Entries:</div>
@@ -418,22 +408,11 @@ class TimeTracker {
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
-    
-    calculateEarnings(minutes) {
-        if (!this.payRate) return 0;
-        return (minutes / 60) * this.payRate;
-    }
-
-    formatMoney(value) {
-        return `$${value.toFixed(2)}`;
-    }
-
     calculateDuration(start, end) {
-
         const minutes = this.getMinutesDuration(start, end);
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        return `${hours}h ${mins}m`; 
+        return `${hours}h ${mins}m`;
     }
 
     getMinutesDuration(start, end) {
