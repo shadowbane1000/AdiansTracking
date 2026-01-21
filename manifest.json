@@ -1,8 +1,9 @@
 {
   "name": "Adian's Time Tracker",
-  "short_name": "TimeTracker",
-  "description": "Progressive Web App for tracking work hours on Android",
-  "start_url": "/",
+  "short_name": "Time Tracker",
+  "description": "PWA App for tracking work hours on Android",
+  "start_url": "/AdiansTracking/",
+  "scope": "/AdiansTracking/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2196F3",
