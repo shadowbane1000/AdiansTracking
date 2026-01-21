@@ -1,72 +1,23 @@
-// Time Tracker App
+// Time Tracker App - Clean Canonical Implementation
 class TimeTracker {
     constructor() {
-        this.currentEntry = null;
         this.entries = this.loadEntries();
-        this.dateRange = {
-            start: null,
-            end: null
-        };
+        this.currentEntry = null;
+        this.payRate = 0;
+        this.dateRange = { start: null, end: null };
+        this.lastAction = null;
         this.init();
     }
 
     init() {
         this.initializePayRate();
-        this.setupEventListeners();
-        this.setupPWAInstall();
-        this.updateStatus();
         this.initializeDateInputs();
+        this.setupEventListeners();
+        this.updateStatus();
     }
 
-    setupEventListeners() {
-        // Punch buttons
-        document.getElementById('punchInBtn').addEventListener('click', () => {
-            this.punchIn();
-        });
+    /* ---------------- PAY RATE ---------------- */
 
-        document.getElementById('punchOutBtn').addEventListener('click', () => {
-            this.punchOut();
-        });
-
-        // Action buttons
-        document.getElementById('viewEntriesBtn').addEventListener('click', () => {
-            this.viewTimeEntries();
-        });
-
-        document.getElementById('calculateHoursBtn').addEventListener('click', () => {
-            this.calculateHours();
-        });
-
-        // Date range inputs
-        document.getElementById('startDate').addEventListener('change', (e) => {
-            this.dateRange.start = e.target.value;
-            this.updateDateRangeDisplay();
-        });
-
-        document.getElementById('endDate').addEventListener('change', (e) => {
-            this.dateRange.end = e.target.value;
-            this.updateDateRangeDisplay();
-        });
-
-        // Quick filter buttons
-        document.getElementById('todayBtn').addEventListener('click', () => {
-            this.setDateRangeToday();
-        });
-
-        document.getElementById('thisWeekBtn').addEventListener('click', () => {
-            this.setDateRangeThisWeek();
-        });
-
-        document.getElementById('thisMonthBtn').addEventListener('click', () => {
-            this.setDateRangeThisMonth();
-        });
-
-        document.getElementById('allTimeBtn').addEventListener('click', () => {
-            this.setDateRangeAllTime();
-        });
-    }
-
-    
     initializePayRate() {
         const input = document.getElementById('payRate');
         this.payRate = parseFloat(localStorage.getItem('payRate')) || 0;
@@ -76,376 +27,166 @@ class TimeTracker {
             input.addEventListener('input', e => {
                 this.payRate = parseFloat(e.target.value) || 0;
                 localStorage.setItem('payRate', this.payRate);
-                this.updateDateRangeDisplay();
+                this.refreshView();
             });
         }
     }
 
+    calculateEarnings(minutes) {
+        if (!this.payRate || minutes <= 0) return 0;
+        return (minutes / 60) * this.payRate;
+    }
+
+    formatMoney(value) {
+        return `$${value.toFixed(2)}`;
+    }
+
+    /* ---------------- DATE RANGE ---------------- */
 
     initializeDateInputs() {
-        // Set default to today
         const today = new Date().toISOString().split('T')[0];
-        document.getElementById('startDate').value = today;
-        document.getElementById('endDate').value = today;
         this.dateRange.start = today;
         this.dateRange.end = today;
-    }
 
-    setDateRangeToday() {
-        const today = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').value = today;
         document.getElementById('endDate').value = today;
-        this.dateRange.start = today;
-        this.dateRange.end = today;
-        this.updateDateRangeDisplay();
     }
 
-    setDateRangeThisWeek() {
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - dayOfWeek);
-
-        const start = startOfWeek.toISOString().split('T')[0];
-        const end = today.toISOString().split('T')[0];
-
-        document.getElementById('startDate').value = start;
-        document.getElementById('endDate').value = end;
+    setDateRange(start, end) {
         this.dateRange.start = start;
         this.dateRange.end = end;
-        this.updateDateRangeDisplay();
+        this.refreshView();
     }
 
-    setDateRangeThisMonth() {
-        const today = new Date();
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-        const start = startOfMonth.toISOString().split('T')[0];
-        const end = today.toISOString().split('T')[0];
-
-        document.getElementById('startDate').value = start;
-        document.getElementById('endDate').value = end;
-        this.dateRange.start = start;
-        this.dateRange.end = end;
-        this.updateDateRangeDisplay();
-    }
-
-    setDateRangeAllTime() {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        this.dateRange.start = null;
-        this.dateRange.end = null;
-        this.updateDateRangeDisplay();
-    }
-
-    updateDateRangeDisplay() {
-        if (document.getElementById('outputDisplay').innerHTML) {
-            const lastAction = this.lastAction;
-            if (lastAction === 'viewEntries') {
-                this.viewTimeEntries();
-            } else if (lastAction === 'calculateHours') {
-                this.calculateHours();
-            }
-        }
-    }
-
-    filterEntriesByDateRange(entries) {
-        if (!this.dateRange.start && !this.dateRange.end) {
-            return entries;
-        }
-
-        return entries.filter(entry => {
-            const entryDate = new Date(entry.punchIn).toISOString().split('T')[0];
-
-            if (this.dateRange.start && this.dateRange.end) {
-                return entryDate >= this.dateRange.start && entryDate <= this.dateRange.end;
-            } else if (this.dateRange.start) {
-                return entryDate >= this.dateRange.start;
-            } else if (this.dateRange.end) {
-                return entryDate <= this.dateRange.end;
-            }
-
-            return true;
+    filterEntries() {
+        return this.entries.filter(e => {
+            const d = e.punchIn.split('T')[0];
+            return (!this.dateRange.start || d >= this.dateRange.start) &&
+                   (!this.dateRange.end || d <= this.dateRange.end);
         });
     }
 
-    setupPWAInstall() {
-        let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
+    /* ---------------- EVENTS ---------------- */
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'block';
-        });
+    setupEventListeners() {
+        document.getElementById('punchInBtn').onclick = () => this.punchIn();
+        document.getElementById('punchOutBtn').onclick = () => this.punchOut();
+        document.getElementById('viewEntriesBtn').onclick = () => this.viewEntries();
+        document.getElementById('calculateHoursBtn').onclick = () => this.calculateHours();
 
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response: ${outcome}`);
-                deferredPrompt = null;
-                installBtn.style.display = 'none';
-            }
-        });
+        document.getElementById('startDate').onchange = e =>
+            this.setDateRange(e.target.value, this.dateRange.end);
 
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA was installed');
-            installBtn.style.display = 'none';
-        });
+        document.getElementById('endDate').onchange = e =>
+            this.setDateRange(this.dateRange.start, e.target.value);
     }
+
+    refreshView() {
+        if (this.lastAction === 'entries') this.viewEntries();
+        if (this.lastAction === 'hours') this.calculateHours();
+    }
+
+    /* ---------------- PUNCHING ---------------- */
 
     punchIn() {
-        if (this.currentEntry) {
-            this.showOutput('Already punched in! Punch out first.', 'warning');
-            return;
-        }
-
-        this.currentEntry = {
-            punchIn: new Date().toISOString(),
-            punchOut: null
-        };
-
+        if (this.currentEntry) return;
+        this.currentEntry = { punchIn: new Date().toISOString(), punchOut: null };
         this.updateStatus();
-        this.showOutput('✅ Punched in at ' + this.formatTime(this.currentEntry.punchIn), 'success');
     }
 
     punchOut() {
-        if (!this.currentEntry) {
-            this.showOutput('Not punched in! Punch in first.', 'warning');
-            return;
-        }
-
+        if (!this.currentEntry) return;
         this.currentEntry.punchOut = new Date().toISOString();
         this.entries.push(this.currentEntry);
-        this.saveEntries();
-
-        const duration = this.calculateDuration(this.currentEntry.punchIn, this.currentEntry.punchOut);
-        this.showOutput(`✅ Punched out at ${this.formatTime(this.currentEntry.punchOut)}\nDuration: ${duration}`, 'success');
-
         this.currentEntry = null;
+        this.saveEntries();
         this.updateStatus();
     }
 
-    deleteEntry(index) {
-        if (confirm('Are you sure you want to delete this entry?')) {
-            this.entries.splice(index, 1);
-            this.saveEntries();
-            this.viewTimeEntries();
-        }
-    }
+    /* ---------------- RENDERING ---------------- */
 
-    updateEntry(index, field, value) {
-        if (value) {
-            this.entries[index][field] = new Date(value).toISOString();
-            this.saveEntries();
-            this.viewTimeEntries();
-        }
-    }
+    viewEntries() {
+        this.lastAction = 'entries';
+        const list = this.filterEntries();
 
-    viewTimeEntries() {
-        this.lastAction = 'viewEntries';
-        const filteredEntries = this.filterEntriesByDateRange(this.entries);
-
-        if (filteredEntries.length === 0) {
-            this.showOutput('No time entries found for the selected date range.', 'info');
+        if (!list.length) {
+            this.show('No entries found.');
             return;
         }
 
-        let output = '<h3>Time Entries</h3>';
-
-        if (this.dateRange.start || this.dateRange.end) {
-            output += '<p class="date-range-info">📅 ';
-            if (this.dateRange.start && this.dateRange.end) {
-                output += `Showing entries from ${this.formatDateOnly(this.dateRange.start)} to ${this.formatDateOnly(this.dateRange.end)}`;
-            } else if (this.dateRange.start) {
-                output += `Showing entries from ${this.formatDateOnly(this.dateRange.start)} onwards`;
-            } else {
-                output += `Showing entries up to ${this.formatDateOnly(this.dateRange.end)}`;
-            }
-            output += '</p>';
-        }
-
-        output += '<div class="entries-list">';
-
-        filteredEntries.forEach((entry) => {
-            const originalIndex = this.entries.indexOf(entry);
-            const punchInDatetime = this.toDatetimeLocalString(entry.punchIn);
-            const punchOutDatetime = this.toDatetimeLocalString(entry.punchOut);
-            const entryDate = this.formatDateOnly(entry.punchIn);
-
-            output += `
+        let html = '<h3>Entries</h3><div class="entries-list">';
+        list.forEach(e => {
+            const idx = this.entries.indexOf(e);
+            const minutes = this.getMinutes(e);
+            html += `
                 <div class="entry-item">
-                    <div class="entry-header">
-                        Entry #${originalIndex + 1}
-                        <button class="btn-delete" onclick="window.app.deleteEntry(${originalIndex})">🗑️ Delete</button>
-                    </div>
-                    <div class="entry-details">
-                        <div class="entry-date">📅 ${entryDate}</div>
-                        <div class="entry-edit-row">
-                            <label>🟢 Punch In:</label>
-                            <input type="datetime-local" 
-                                   value="${punchInDatetime}" 
-                                   onchange="window.app.updateEntry(${originalIndex}, 'punchIn', this.value)"
-                                   class="datetime-edit">
-                        </div>
-                        <div class="entry-edit-row">
-                            <label>🔴 Punch Out:</label>
-                            <input type="datetime-local" 
-                                   value="${punchOutDatetime}" 
-                                   onchange="window.app.updateEntry(${originalIndex}, 'punchOut', this.value)"
-                                   class="datetime-edit">
-                        </div>
-                        <div class="entry-duration">⏱️ Duration: ${this.calculateDuration(entry.punchIn, entry.punchOut)}
-     | 💰 ${this.formatMoney(
-        this.calculateEarnings(
-          this.getMinutesDuration(entry.punchIn, entry.punchOut)
-        )
-     )}</div>
-                    </div>
-                </div>
-            `;
+                    <strong>${e.punchIn.split('T')[0]}</strong><br>
+                    ⏱️ ${this.formatDuration(minutes)} |
+                    💰 ${this.formatMoney(this.calculateEarnings(minutes))}
+                    <br>
+                    <input type="datetime-local" value="${this.toLocal(e.punchIn)}"
+                        onchange="window.app.updateEntry(${idx}, 'punchIn', this.value)">
+                    <input type="datetime-local" value="${this.toLocal(e.punchOut)}"
+                        onchange="window.app.updateEntry(${idx}, 'punchOut', this.value)">
+                    <button onclick="window.app.deleteEntry(${idx})">Delete</button>
+                </div>`;
         });
-
-        output += '</div>';
-        this.showOutput(output, 'info');
+        html += '</div>';
+        this.show(html);
     }
 
     calculateHours() {
-        this.lastAction = 'calculateHours';
-        const filteredEntries = this.filterEntriesByDateRange(this.entries);
-
-        if (filteredEntries.length === 0) {
-            this.showOutput('No time entries found for the selected date range.', 'info');
-            return;
-        }
-
+        this.lastAction = 'hours';
+        const list = this.filterEntries();
         let totalMinutes = 0;
-        let totalPay = 0;
-        let todayPay = 0;
-        let todayMinutes = 0;
-        const today = new Date().toISOString().split('T')[0];
+        list.forEach(e => totalMinutes += this.getMinutes(e));
 
-        filteredEntries.forEach(entry => {
-            const minutes = this.getMinutesDuration(entry.punchIn, entry.punchOut);
-            totalMinutes += minutes;
-            totalPay += this.calculateEarnings(minutes);
+        this.show(`
+            <h3>Summary</h3>
+            ${ (totalMinutes/60).toFixed(2) } hours<br>
+            💰 ${this.formatMoney(this.calculateEarnings(totalMinutes))}
+        `);
+    }
 
-            const entryDate = new Date(entry.punchIn).toISOString().split('T')[0];
-            if (entryDate === today) {
-                todayMinutes += minutes;
-                todayPay += this.calculateEarnings(minutes);
-            }
-        });
+    /* ---------------- HELPERS ---------------- */
 
-        const totalHours = (totalMinutes / 60).toFixed(2);
-        const todayHours = (todayMinutes / 60).toFixed(2);
+    getMinutes(e) {
+        return Math.floor((new Date(e.punchOut) - new Date(e.punchIn)) / 60000);
+    }
 
-        let output = '<h3>Hours Summary</h3>';
+    formatDuration(m) {
+        return `${Math.floor(m/60)}h ${m%60}m`;
+    }
 
-        if (this.dateRange.start || this.dateRange.end) {
-            output += '<p class="date-range-info">📅 ';
-            if (this.dateRange.start && this.dateRange.end) {
-                output += `Period: ${this.formatDateOnly(this.dateRange.start)} to ${this.formatDateOnly(this.dateRange.end)}`;
-            } else if (this.dateRange.start) {
-                output += `Period: ${this.formatDateOnly(this.dateRange.start)} onwards`;
-            } else {
-                output += `Period: up to ${this.formatDateOnly(this.dateRange.end)}`;
-            }
-            output += '</p>';
-        }
+    toLocal(iso) {
+        return iso ? iso.slice(0,16) : '';
+    }
 
-        output += `
-            <div class="summary-stats">
-                <div class="stat-item">
-                    <div class="stat-label">Today:</div>
-                    <div class="stat-value">${todayHours} hours<br>💰 ${this.formatMoney(todayPay)}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Total:</div>
-                    <div class="stat-value">${totalHours} hours<br>💰 ${this.formatMoney(totalPay)}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Entries:</div>
-                    <div class="stat-value">${filteredEntries.length}</div>
-                </div>
-            </div>
-        `;
+    updateEntry(i, k, v) {
+        this.entries[i][k] = new Date(v).toISOString();
+        this.saveEntries();
+        this.refreshView();
+    }
 
-        this.showOutput(output, 'info');
+    deleteEntry(i) {
+        this.entries.splice(i,1);
+        this.saveEntries();
+        this.refreshView();
+    }
+
+    show(html) {
+        const o = document.getElementById('outputDisplay');
+        o.innerHTML = html;
+        o.style.display = 'block';
     }
 
     updateStatus() {
-        const statusDiv = document.getElementById('currentStatus');
-
-        if (this.currentEntry) {
-            const duration = this.calculateDuration(this.currentEntry.punchIn, new Date().toISOString());
-            statusDiv.innerHTML = `🟢 Currently clocked in<br>Started: ${this.formatTime(this.currentEntry.punchIn)}<br>Duration: ${duration}`;
-            statusDiv.className = 'status-display status-active';
-        } else {
-            statusDiv.innerHTML = 'Ready to start tracking time';
-            statusDiv.className = 'status-display';
-        }
-    }
-
-    showOutput(message, type = 'info') {
-        const outputDiv = document.getElementById('outputDisplay');
-        outputDiv.innerHTML = message;
-        outputDiv.className = `output-display output-${type}`;
-        outputDiv.style.display = 'block';
-    }
-
-    formatTime(isoString) {
-        const date = new Date(isoString);
-        return date.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    }
-
-    formatDateOnly(isoStringOrDate) {
-        // Handle ISO strings with time component
-        const date = new Date(isoStringOrDate);
-
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-            return 'Invalid Date';
-        }
-
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    }
-
-    toDatetimeLocalString(isoString) {
-        const date = new Date(isoString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
-
-    calculateDuration(start, end) {
-        const minutes = this.getMinutesDuration(start, end);
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return `${hours}h ${mins}m`;
-    }
-
-    getMinutesDuration(start, end) {
-        const startTime = new Date(start);
-        const endTime = new Date(end);
-        return Math.floor((endTime - startTime) / 1000 / 60);
+        const s = document.getElementById('currentStatus');
+        s.textContent = this.currentEntry ? 'Clocked In' : 'Ready';
     }
 
     loadEntries() {
-        const stored = localStorage.getItem('timeEntries');
-        return stored ? JSON.parse(stored) : [];
+        return JSON.parse(localStorage.getItem('timeEntries') || '[]');
     }
 
     saveEntries() {
@@ -453,21 +194,6 @@ class TimeTracker {
     }
 }
 
-// Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new TimeTracker();
-
-    // Update status every minute if clocked in
-    setInterval(() => {
-        if (window.app.currentEntry) {
-            window.app.updateStatus();
-        }
-    }, 60000);
 });
-
-// Register service worker
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('Service Worker registered'))
-        .catch(err => console.log('Service Worker registration failed'));
-}
